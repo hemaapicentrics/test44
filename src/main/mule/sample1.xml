@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="6d517cd3-872d-4de1-9b26-ca0c1d5c543a" >
+		<http:listener-connection host="localhost" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="6e3229b5-8d86-4def-8897-285dfbee29c0" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="No217353" database="world" />
+	</db:config>
+	<validation:config name="Validation_Config1" doc:name="Validation Config" doc:id="61de9a64-879b-405c-ac31-a3cd6599458c" i18n="#[payload]"/>
+	<db:config name="Database_Config1" doc:name="Database Config" doc:id="5a7f325e-fe4f-43cb-8fe1-65f6ada8046b" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="No217353" database="batch" />
+	</db:config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="6d690e9c-ab5d-43e6-a9b1-677dcc2f5805" >
+		<http:request-connection >
+			<http:proxy-config >
+				<http:proxy host="localhost" port="8081" />
+			</http:proxy-config>
+		</http:request-connection>
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration1" doc:name="HTTP Request configuration" doc:id="d168cc08-139e-407c-addd-56dd344713be" >
+		<http:request-connection host="localhost" port="8081" />
+	</http:request-config>
+	<flow name="sample1Flow" doc:id="36847d15-a89e-4c0a-91e0-2fdfaccb7929" >
+		<http:listener doc:name="Listener" doc:id="a3c54408-637b-4dbc-90ce-7f0e970b7c02" config-ref="HTTP_Listener_config" path="/s1"/>
+		<db:select doc:id="def6d557-5b17-48bc-b1dd-c1ef3d365767" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from city where ID=:id and Name=:n]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{'id':payload.id,'n':payload.name}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="a31553f2-21bd-4cb2-bcfd-147154c500a4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="sample1Flow1" doc:id="c67116f1-de54-4da7-9e49-eee01945d196" >
+		<http:listener doc:name="Listener" doc:id="163e55e0-7cbb-4769-841c-064b3024cd8b" config-ref="HTTP_Listener_config" path="/s2"/>
+		<set-payload value="#['before']" doc:name="Set Payload" doc:id="7afe5137-29a0-4719-88e7-757267973ecc" />
+		<validation:is-null doc:name="Is null" doc:id="b6a0d683-2ca7-4175-a376-19d8c62e0e31" config-ref="Validation_Config1" value="#[payload]"/>
+		<set-payload value="'after'" doc:name="Set Payload" doc:id="b9adae38-42d6-463a-8d03-f7463ed0ed62" />
+	</flow>
+	<flow name="sample1Flow2" doc:id="098569f7-b870-49a5-b107-5718f19c52db" >
+		<http:listener doc:name="Listener" doc:id="f9a2dee8-ade6-4ba7-8796-72e7f422d922" config-ref="HTTP_Listener_config" path="/sr3"/>
+		<set-payload value="#[[1,2,3,4]]" doc:name="[1,2,3,4]" doc:id="2134d255-c38d-42cd-85d3-60af1d63042a" />
+		<foreach doc:name="For Each" doc:id="1f806db5-511f-4f3f-9f80-5ae38a940ec3">
+			<set-payload value="#['data'++ payload]" doc:name="'data'++ payload" doc:id="bfee6ed8-363e-4053-a695-ca35ef054acf" />
+		</foreach>
+		<logger level="INFO" doc:name="Logger" doc:id="e87e68dd-ab03-4c16-b111-1d430ec8a042" message="#[payload]"/>
+	</flow>
+	<flow name="sample1Flow3" doc:id="515c98fd-75ab-4da9-9fdd-574cc0f2893c" >
+		<http:listener doc:name="Listener" doc:id="cb5090ad-91fa-437a-94a7-4d242a8654a5" config-ref="HTTP_Listener_config" path="/bp"/>
+		<set-payload value="#[[1,2,3,4]]" doc:name="[1,2,3,4]" doc:id="4015a451-c592-4127-b0f5-787de32b65b4" />
+		<batch:job jobName="sample1Batch_Job" doc:id="15787e40-f2ff-468e-bf51-2a73bf9e9e84" >
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="3c6c8174-f479-41e2-8284-7e77012e40fb" >
+					<set-payload value="#['one' ++ payload]" doc:name="'one' ++ payload" doc:id="ff22bc94-47b9-4776-9b21-6a9af5bc9031" />
+				</batch:step>
+				<batch:step name="Batch_Step1" doc:id="c758d099-ab65-4d6f-881b-46245a61f189" >
+					<set-payload value="#['three' ++ payload]" doc:name="'three' ++ payload" doc:id="670d7572-e7e9-44c4-ad78-3ac332e9f72a" />
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="eba8282b-91db-4ee9-af61-9ddbaad38954" message="mypayload :: #[output application/json --- payload]"/>
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+	<flow name="sample1Flow4" doc:id="b5bffd19-1662-4e9a-8ac2-1837d01024e1" >
+		<http:listener doc:name="Listener" doc:id="1b3d1fae-6624-46e3-a8cf-a40e3eaaad37" config-ref="HTTP_Listener_config" path="/log"/>
+		<logger level="INFO" doc:name="Logger" doc:id="97fc6140-69e3-4cb4-8618-4336a9ad69e7" message='The payload is: #[payload]'/>
+	</flow>
+	<flow name="sample1Flow5" doc:id="1c628d97-1bcc-4297-ba35-b2b2e612a41e" >
+		<http:listener doc:name="Listener" doc:id="55ed03e3-7916-4f39-89c8-dc3eee177636" config-ref="HTTP_Listener_config" path="/fr"/>
+		<set-payload value="#['customer data']" doc:name="'customer data'" doc:id="bcc23277-9419-4a86-abf9-4f4053c32cce" />
+		<set-variable value="jackson" doc:name="Set city to jackson" doc:id="d3e5191d-4f74-406b-b5d3-906ae96f64a3" variableName="city"/>
+		<set-variable value="fl" doc:name="Set state to fl" doc:id="da43e62d-d4df-48e3-a0af-e0c7fef84ab7" variableName="state"/>
+		<http:request method="POST" doc:name="Request" doc:id="5ac90ea4-17d4-4b9b-bf33-e9e0af23bae9" config-ref="HTTP_Request_configuration1" path="/child"/>
+	</flow>
+	<flow name="sample1Flow6" doc:id="10ae27c0-3682-42e8-9530-e56bbbda2cb7" >
+		<http:listener doc:name="Listener" doc:id="3c21fcc0-d12b-434e-b980-83992c522aca" config-ref="HTTP_Listener_config" path="/child"/>
+		<logger level="INFO" doc:name="Logger" doc:id="d62026f7-0d86-454c-85e9-fe35e6948c59"/>
+	</flow>
+</mule>
